@@ -16,7 +16,7 @@ def create_polars_df():
             mean = pl.col("measure").mean()
         )
         .sort("station")
-        .collect(streaming=True)
+        .collect()
     )
 
 if __name__ == "__main__":

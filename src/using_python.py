@@ -1,57 +1,68 @@
 from csv import reader
-from collections import defaultdict, Counter
-from tqdm import tqdm  # barra de progresso
+from collections import defaultdict
 import time
 
-NUMERO_DE_LINHAS = 1_000_000_000
+from pathlib import Path
 
-def processar_temperaturas(path_do_csv):
-    # utilizando infinito positivo e negativo para comparar
-    minimas = defaultdict(lambda: float('inf'))
-    maximas = defaultdict(lambda: float('-inf'))
-    somas = defaultdict(float)
-    medicoes = Counter()
+def processar_temperaturas(path_do_txt: Path):
+    print("Iniciando o processamento do arquivo.")
+    start_time = time.time()  # Tempo de início
 
-    with open(path_do_csv, 'r') as file:
+    temperatura_por_station = defaultdict(list)
+
+    """
+        Exemplo de como vai ficar a variável temperatura_por_station
+        temperatura_por_station = {
+            'Hamburg': [12.0],
+            'Bulawayo': [8.9],
+            'Palembang': [38.8],
+            'St. John\'s': [15.2],
+            'Cracow': [12.6],
+            'Bridgetown': [26.9],
+            'Istanbul': [6.2, 23.0], # Note que Istanbul tem duas entradas
+            'Roseau': [34.4],
+            'Conakry': [31.2],
+        }
+        O uso de defaultdict do módulo collections é uma escolha conveniente 
+        Sem o defaultdict, o código para adicionar uma temperatura iria parecer com isso:
+        if nome_da_station not in temperatura_por_station:
+            temperatura_por_station[nome_da_station] = []
+        temperatura_por_station[nome_da_station].append(temperatura)
+        Com defaultdict, isso é simplificado para:
+        temperatura_por_station[nome_da_station].append(temperatura)
+    """
+
+    with open(path_do_txt, 'r', encoding="utf-8") as file:
         _reader = reader(file, delimiter=';')
-        # usando tqdm diretamente no iterador, isso mostrará a porcentagem de conclusão.
-        for row in tqdm(_reader, total=NUMERO_DE_LINHAS, desc="Processando"):
+        for row in _reader:
             nome_da_station, temperatura = str(row[0]), float(row[1])
-            medicoes.update([nome_da_station])
-            minimas[nome_da_station] = min(minimas[nome_da_station], temperatura)
-            maximas[nome_da_station] = max(maximas[nome_da_station], temperatura)
-            somas[nome_da_station] += temperatura
+            temperatura_por_station[nome_da_station].append(temperatura)
 
     print("Dados carregados. Calculando estatísticas...")
 
-    # calculando min, média e max para cada estação
+    # Dicionário para armazenar os resultados calculados
     results = {}
-    for station, qtd_medicoes in medicoes.items():
-        mean_temp = somas[station] / qtd_medicoes
-        results[station] = (minimas[station], mean_temp, maximas[station])
+
+    # Calculando min, média e max para cada estação
+    for station, temperatures in temperatura_por_station.items():
+        min_temp = min(temperatures)
+        mean_temp = sum(temperatures) / len(temperatures)
+        max_temp = max(temperatures)
+        results[station] = (min_temp, mean_temp, max_temp)
 
     print("Estatística calculada. Ordenando...")
-    # ordenando os resultados pelo nome da estação
+    # Ordenando os resultados pelo nome da estação
     sorted_results = dict(sorted(results.items()))
 
-    # formatando os resultados para exibição
-    formatted_results = {station: f"{min_temp:.1f}/{mean_temp:.1f}/{max_temp:.1f}"
-                         for station, (min_temp, mean_temp, max_temp) in sorted_results.items()}
+    # Formatando os resultados para exibição
+    formatted_results = {station: f"{min_temp:.1f}/{mean_temp:.1f}/{max_temp:.1f}" for station, (min_temp, mean_temp, max_temp) in sorted_results.items()}
+
+    end_time = time.time()  # Tempo de término
+    print(f"Processamento concluído em {end_time - start_time:.2f} segundos.")
 
     return formatted_results
 
 
 if __name__ == "__main__":
-    path_do_csv = "data/measurements.txt"
-
-    print("Iniciando o processamento do arquivo.")
-    start_time = time.time()  # Tempo de início
-
-    resultados = processar_temperaturas(path_do_csv)
-
-    end_time = time.time()  # Tempo de término
-
-    for station, metrics in resultados.items():
-        print(station, metrics, sep=': ')
-
-    print(f"\nProcessamento concluído em {end_time - start_time:.2f} segundos.")
+    path_do_txt: Path = Path("data/measurements.txt")
+    resultados = processar_temperaturas(path_do_txt)
