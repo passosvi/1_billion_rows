@@ -62,11 +62,7 @@ def processar_temperaturas(path_do_txt: Path):
 
     return formatted_results
 
-# Substitua "data/measurements10M.txt" pelo caminho correto do seu arquivo
-if __name__ == "__main__":
 
-    # 1M 0.38 segundos
-    # 10M 3.96 segundos.
+if __name__ == "__main__":
     path_do_txt: Path = Path("data/measurements.txt")
-    # 100M > 5 minutos.
     resultados = processar_temperaturas(path_do_txt)
